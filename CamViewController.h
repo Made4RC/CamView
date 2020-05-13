@@ -76,6 +76,7 @@
     IBOutlet NSTextField* _configXMaxTravel;
     IBOutlet NSTextField* _configYMaxTravel;
     IBOutlet NSTextField* _configZMaxTravel;
+    IBOutlet NSTextField* _configXYPependicularityCompensation;
     IBOutlet NSButton* _configRevertButton;
     
     // Jog
@@ -83,6 +84,9 @@
     IBOutlet NSSlider *mCircleSlider;
     IBOutlet NSButton *mLocationButton;
     IBOutlet NSButton *mHomingButton;
+    IBOutlet NSButton *mCopyMaschinePosButton;
+    IBOutlet NSButton *mP1Button;
+    IBOutlet NSButton *mP2Button;
     IBOutlet NSButton *mXLimitReached;
     IBOutlet NSButton *mYLimitReached;
     IBOutlet NSButton *mZLimitReached;
@@ -159,7 +163,7 @@
 - (IBAction)mMenuSwitchPanelClicked:(id)sender;
 - (void)setStatusMessage:(int)type :(NSString*)message;
 - (void)setStatusMessage2:(NSDictionary*)dict;
-- (void) clearStatusMessage:(NSTimer *)timer;
+- (void)clearStatusMessage:(NSTimer *)timer;
 - (IBAction)mPreferencesClicked:(id)sender;
 - (IBAction)mSoftResetClicked:(id)sender;
 - (IBAction)mUnlockClicked:(id)sender;
@@ -182,8 +186,6 @@
 - (IBAction)mCameraSelectChangend:(id)sender;
 - (IBAction)mRefreshCameraListClicked:(id)sender;
 - (IBAction)mCameraConnectClicked:(id)sender;
-- (IBAction)mLocationButtonClicked:(id)sender;
-- (IBAction)mHomingButtonClicked:(id)sender;
 - (void)tabView:(NSTabView *)tabView willSelectTabViewItem:(NSTabViewItem *)tabViewItem;
 - (IBAction)restoreConfigurationDefaults:(id)sender;
 - (IBAction)saveConfiguration:(id)sender;
@@ -192,6 +194,11 @@
 #pragma mark Jog
 // ##########################################################################
 - (IBAction)mCircleSliderChanged:(id)sender;
+- (IBAction)mLocationButtonClicked:(id)sender;
+- (IBAction)mHomingButtonClicked:(id)sender;
+- (IBAction)mCopyMaschinePosButtonClicked:(id)sender;
+- (IBAction)mP1ButtonClicked:(id)sender;
+- (IBAction)mP2ButtonClicked:(id)sender;
 - (IBAction)mZeroXClicked:(id)sender;
 - (IBAction)mZeroYClicked:(id)sender;
 - (IBAction)mZeroZClicked:(id)sender;
@@ -214,5 +221,6 @@
 - (IBAction)mChangeFeedRateClicked:(id)sender;
 - (void)highlightGCode;
 - (void)setSendingProgess:(NSNumber*)percent;
+- (void)processGCodeFile;
 
 @end

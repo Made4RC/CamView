@@ -81,6 +81,7 @@
     [_configXMaxTravel setEnabled:NO];
     [_configYMaxTravel setEnabled:NO];
     [_configZMaxTravel setEnabled:NO];
+    [_configXYPependicularityCompensation setEnabled:NO];
     [_configRevertButton setEnabled:NO];
     
     // ... for "Jog", ...
@@ -100,6 +101,10 @@
     [mStepWithButton setSelectedSegment:[mStepWidth indexOfSelectedItem]];
     [mLocationButton setImage:[NSImage imageNamed:@"Icon_Milling.png"]];
     [mLocationButton setEnabled:FALSE];
+    [mHomingButton setEnabled:FALSE];
+    [mCopyMaschinePosButton setEnabled:FALSE];
+    [mP1Button setEnabled:FALSE];
+    [mP2Button setEnabled:FALSE];
     [mZeroXButton setEnabled:FALSE];
     [mLockZeroXYButton setEnabled:FALSE];
     [mZeroYButton setEnabled:FALSE];
@@ -279,9 +284,18 @@
         
         // Jog
         if ([mCaptureSession isRunning]) {
+            [mLocationButton setEnabled:FALSE];
+            [mHomingButton setEnabled:FALSE];
+            [mCopyMaschinePosButton setEnabled:FALSE];
+            [mP1Button setEnabled:FALSE];
+            [mP2Button setEnabled:FALSE];
+        } else {
             [mLocationButton setEnabled:TRUE];
+            [mHomingButton setEnabled:TRUE];
+            [mCopyMaschinePosButton setEnabled:TRUE];
+            [mP1Button setEnabled:TRUE];
+            [mP2Button setEnabled:TRUE];
         }
-        [mHomingButton setEnabled:TRUE];
         [mZeroXButton setEnabled:TRUE];
         [mLockZeroXYButton setEnabled:TRUE];
         [mZeroYButton setEnabled:TRUE];
@@ -362,6 +376,9 @@
         // Jog
         [mLocationButton setEnabled:FALSE];
         [mHomingButton setEnabled:FALSE];
+        [mCopyMaschinePosButton setEnabled:FALSE];
+        [mP1Button setEnabled:FALSE];
+        [mP2Button setEnabled:FALSE];
         [mZeroXButton setEnabled:FALSE];
         [mLockZeroXYButton setEnabled:FALSE];
         [mZeroYButton setEnabled:FALSE];
@@ -396,6 +413,10 @@
             [_machineState setTextColor:[NSColor redColor]];
             [mUnlockButton setEnabled:TRUE];
             [mLocationButton setEnabled:FALSE];
+            [mHomingButton setEnabled:FALSE];
+            [mCopyMaschinePosButton setEnabled:FALSE];
+            [mP1Button setEnabled:FALSE];
+            [mP2Button setEnabled:FALSE];
             [mFeedHoldButton setEnabled:FALSE];
             [mCycleStartButton setEnabled:FALSE];
             [mSendGCode setEnabled:FALSE];
@@ -405,7 +426,11 @@
             [_machineState setTextColor:[NSColor blackColor]];
             [mUnlockButton setEnabled:FALSE];
             if ([mCaptureSession isRunning]) {
-                [mLocationButton setEnabled:TRUE];
+                [mLocationButton setEnabled:FALSE];
+                [mHomingButton setEnabled:FALSE];
+                [mCopyMaschinePosButton setEnabled:FALSE];
+                [mP1Button setEnabled:FALSE];
+                [mP2Button setEnabled:FALSE];
             }
             [mFeedHoldButton setEnabled:FALSE];
             [mCycleStartButton setEnabled:FALSE];
@@ -418,6 +443,10 @@
             [_machineState setTextColor:[NSColor blackColor]];
             [mUnlockButton setEnabled:FALSE];
             [mLocationButton setEnabled:FALSE];
+            [mHomingButton setEnabled:FALSE];
+            [mCopyMaschinePosButton setEnabled:FALSE];
+            [mP1Button setEnabled:FALSE];
+            [mP2Button setEnabled:FALSE];
             [mFeedHoldButton setEnabled:FALSE];
             [mCycleStartButton setEnabled:TRUE];
             [mSendGCode setEnabled:FALSE];
@@ -429,6 +458,10 @@
             if ([mCaptureSession isRunning]) {
                 [mLocationButton setEnabled:TRUE];
             }
+            [mHomingButton setEnabled:TRUE];
+            [mCopyMaschinePosButton setEnabled:TRUE];
+            [mP1Button setEnabled:TRUE];
+            [mP2Button setEnabled:TRUE];
             [mFeedHoldButton setEnabled:FALSE];
             [mCycleStartButton setEnabled:FALSE];
             if ([[mNCData string] length] > 0) {
@@ -449,6 +482,10 @@
             [_machineState setTextColor:[NSColor colorWithSRGBRed:1.0 green:0.6 blue:0.0 alpha:1.0]];
             [mUnlockButton setEnabled:FALSE];
             [mLocationButton setEnabled:FALSE];
+            [mHomingButton setEnabled:FALSE];
+            [mCopyMaschinePosButton setEnabled:FALSE];
+            [mP1Button setEnabled:FALSE];
+            [mP2Button setEnabled:FALSE];
             [mFeedHoldButton setEnabled:TRUE];
             [mCycleStartButton setEnabled:FALSE];
             [mSendGCode setEnabled:FALSE];
@@ -459,6 +496,10 @@
             [_machineState setTextColor:[NSColor redColor]];
             [mUnlockButton setEnabled:FALSE];
             [mLocationButton setEnabled:FALSE];
+            [mHomingButton setEnabled:FALSE];
+            [mCopyMaschinePosButton setEnabled:FALSE];
+            [mP1Button setEnabled:FALSE];
+            [mP2Button setEnabled:FALSE];
             [mFeedHoldButton setEnabled:FALSE];
             [mCycleStartButton setEnabled:FALSE];
             [mSendGCode setEnabled:FALSE];
@@ -493,6 +534,22 @@
     [_workCoordinateZ1 setStringValue:[grbl workCoordinateZ]];
     [_workCoordinateZ2 setStringValue:[grbl workCoordinateZ]];
     [_feedRate setStringValue:[NSString stringWithFormat:@"%d mm/min", [grbl feedRate]]];
+}
+- (void)controlTextDidEndEditing:(NSNotification *)notification {
+    if ( [[[notification userInfo] objectForKey:@"NSTextMovement"] intValue] == NSReturnTextMovement ) {
+        NSString* command = [mCustomCommand stringValue];
+        wasCustomCommand = TRUE;
+        [grbl sendCommand:command];
+        [mCustomCommand setStringValue:@""];
+    }
+    
+    if ([notification object] == _gcodeModifiyShiftX ||
+        [notification object] == _gcodeModifiyShiftY ||
+        [notification object] == _gcodeModifiyShiftZ ||
+        [notification object] == _gcodeModifiyAngle ||
+        [notification object] == _gcodeModifiyScale ) {
+        [self processGCodeFile];
+    }
 }
 
 
@@ -948,6 +1005,10 @@
                 [_configLaserMode setEnabled:YES];
             }
             break;
+        case GRBL_CONFIG_XY_PERPENDICULARTY_COMPENSATION:
+            [_configXYPependicularityCompensation setStringValue:value];
+            [_configXYPependicularityCompensation setEnabled:YES];
+            break;
         case GRBL_CONFIG_X_STEPS_PER_MM:
             if (value != nil) {
                 [_configXStepsPerMM setStringValue:value];
@@ -1155,6 +1216,11 @@
         [grbl sendCommand:[NSString stringWithFormat:@"$32=%d", binaryValue]];
     }
 
+    if (![[_configXYPependicularityCompensation stringValue] isEqualToString:[configuration objectForKey:@"33"]]) {
+        [grbl sendCommand:[NSString stringWithFormat:@"$33=%0.4f", [_configXYPependicularityCompensation floatValue]]];
+    }
+
+    
     if ((long)[_configXStepsPerMM integerValue] != (long)[[configuration objectForKey:@"100"] integerValue]) {
         [grbl sendCommand:[NSString stringWithFormat:@"$100=%@", [_configXStepsPerMM stringValue]]];
     }
@@ -1223,6 +1289,64 @@
     NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
     [defaults setObject:[NSNumber numberWithInt:[mCircleSlider intValue]] forKey:@"CrosshairDiameter"];
 }
+- (IBAction)mLocationButtonClicked:(id)sender {
+    if (![mCaptureSession isRunning]) {
+        [self setStatusMessage:STATUS_MESSAGE_WARNING :@"Connect to camera first."];
+        return;
+    }
+    
+    float deltaX = [[[NSUserDefaults standardUserDefaults] objectForKey:@"CameraOffsetX"] floatValue];
+    float deltaY = [[[NSUserDefaults standardUserDefaults] objectForKey:@"CameraOffsetY"] floatValue];
+    
+    float currentXValue = 0.0;
+    float currentYValue = 0.0;
+    
+    if (currentPosition == POSITION_MILLING) {
+        [mLocationButton setImage:[NSImage imageNamed:@"Icon_Camera.png"]];
+        currentXValue = [[grbl workCoordinateX] floatValue] - deltaX;
+        currentYValue = [[grbl workCoordinateY] floatValue] - deltaY;
+        currentPosition = POSITION_CAMERA;
+    } else if (currentPosition == POSITION_CAMERA) {
+        [mLocationButton setImage:[NSImage imageNamed:@"Icon_Milling.png"]];
+        currentXValue = [[grbl workCoordinateX] floatValue] + deltaX;
+        currentYValue = [[grbl workCoordinateY] floatValue] + deltaY;
+        currentPosition = POSITION_MILLING;
+    }
+    
+    NSString *command = [NSString stringWithFormat:@"G92 X%f Y%f", currentXValue, currentYValue];
+    [grbl sendCommand:command];
+}
+- (IBAction)mHomingButtonClicked:(id)sender {
+    //[grbl sendCommandAndParseResponse:@"$H"];
+}
+- (IBAction)mCopyMaschinePosButtonClicked:(id)sender {
+    float currentXValue = [[grbl machineCoordinateX] floatValue];
+    float currentYValue = [[grbl machineCoordinateY] floatValue];
+    float currentZValue = [[grbl machineCoordinateZ] floatValue];
+    
+    NSString *command = [NSString stringWithFormat:@"G92 X%f Y%f Z%f", currentXValue, currentYValue, currentZValue];
+    [grbl sendCommand:command];
+}
+- (IBAction)mP1ButtonClicked:(id)sender {
+    NSString *command = @"G28";
+    
+    NSUInteger flags = [[NSApp currentEvent] modifierFlags];
+    if (flags & NSAlternateKeyMask) {
+        command = @"G28.1";
+    }
+    
+    [grbl sendCommand:command];
+}
+- (IBAction)mP2ButtonClicked:(id)sender {
+    NSString *command = @"G30";
+
+    NSUInteger flags = [[NSApp currentEvent] modifierFlags];
+    if (flags & NSAlternateKeyMask) {
+        command = @"G30.1";
+    }
+    
+    [grbl sendCommand:command];
+}
 - (IBAction)mZeroXClicked:(id)sender {
     if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"LockXY"] boolValue]) {
         [grbl sendCommand:@"G92 X0 Y0"];
@@ -1275,34 +1399,34 @@
     NSString *command = @"G91";
     [grbl sendCommand:command];
     
-    if ([sender tag] == 10) {
+    if ([sender tag] == 10) { // +x
         command = [NSString stringWithFormat:@"G0 X %f", stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 20) {
+    } else if ([sender tag] == 20) { // +x -y
         command = [NSString stringWithFormat:@"G0 X %f Y -%f", stepWith, stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 30) {
+    } else if ([sender tag] == 30) { // -y
         command = [NSString stringWithFormat:@"G0 Y -%f", stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 40) {
+    } else if ([sender tag] == 40) { // -x -y
         command = [NSString stringWithFormat:@"G0 X -%f Y -%f", stepWith, stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 50) {
+    } else if ([sender tag] == 50) { // -x
         command = [NSString stringWithFormat:@"G0 X -%f", stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 60) {
+    } else if ([sender tag] == 60) { // -x +y
         command = [NSString stringWithFormat:@"G0 X -%f Y %f", stepWith, stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 70) {
+    } else if ([sender tag] == 70) { // +y
         command = [NSString stringWithFormat:@"G0 Y %f", stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 80) {
+    } else if ([sender tag] == 80) { // +x +y
         command = [NSString stringWithFormat:@"G0 X %f Y %f", stepWith, stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 100) {
+    } else if ([sender tag] == 100) { // +z
         command = [NSString stringWithFormat:@"G0 Z %f", stepWith];
         _lastJogWasMinusZ = FALSE;
-    } else if ([sender tag] == 110) {
+    } else if ([sender tag] == 110) { // -z
         if (_lastJogWasMinusZ==FALSE) {
             NSAlert *alert = [[NSAlert alloc] init];
             [alert addButtonWithTitle:@"OK"];
@@ -1354,44 +1478,6 @@
         [defaults setObject:[NSNumber numberWithBool:TRUE] forKey:@"LockGotoX0Y0"];
     }    
 }
-- (void)controlTextDidEndEditing:(NSNotification *)notification {
-    if ( [[[notification userInfo] objectForKey:@"NSTextMovement"] intValue] == NSReturnTextMovement ) {
-        NSString* command = [mCustomCommand stringValue];
-        wasCustomCommand = TRUE;
-        [grbl sendCommand:command];
-        [mCustomCommand setStringValue:@""];
-    }
-}
-- (IBAction)mLocationButtonClicked:(id)sender {
-    if (![mCaptureSession isRunning]) {
-        [self setStatusMessage:STATUS_MESSAGE_WARNING :@"Connect to camera first."];
-        return;
-    }
-    
-    float deltaX = [[[NSUserDefaults standardUserDefaults] objectForKey:@"CameraOffsetX"] floatValue];
-    float deltaY = [[[NSUserDefaults standardUserDefaults] objectForKey:@"CameraOffsetY"] floatValue];
-    
-    float currentXValue = 0.0;
-    float currentYValue = 0.0;
-    
-    if (currentPosition == POSITION_MILLING) {
-        [mLocationButton setImage:[NSImage imageNamed:@"Icon_Camera.png"]];
-        currentXValue = [[grbl workCoordinateX] floatValue] - deltaX;
-        currentYValue = [[grbl workCoordinateY] floatValue] - deltaY;
-        currentPosition = POSITION_CAMERA;
-    } else if (currentPosition == POSITION_CAMERA) {
-        [mLocationButton setImage:[NSImage imageNamed:@"Icon_Milling.png"]];
-        currentXValue = [[grbl workCoordinateX] floatValue] + deltaX;
-        currentYValue = [[grbl workCoordinateY] floatValue] + deltaY;
-        currentPosition = POSITION_MILLING;
-    }
-    
-    NSString *command = [NSString stringWithFormat:@"G92 X%f Y%f", currentXValue, currentYValue];
-    [grbl sendCommand:command];
-}
-- (IBAction)mHomingButtonClicked:(id)sender {
-    //[grbl sendCommandAndParseResponse:@"$H"];
-}
 
 
 // ##########################################################################
@@ -1413,64 +1499,10 @@
             NSArray* files = [openPanel URLs];
             for(NSURL *url in files) {
                 NSString* path = [url.path stringByResolvingSymlinksInPath];
-                NSLog(@"%@", url);
                 
-                //do something with the file at "path"
                 [mNCDataFileName setStringValue:path];
 
-                GCode* ncData = [[GCode alloc] init];
-                [ncData readFromURL:url];
-                
-                NSString *content =[ncData toCommands];
-                [mNCData setString:content];
-                [self highlightGCode];
-                
-                [_gcodeInformationXDimensions setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:0] floatValue], [[[ncData boundaries] objectAtIndex:1] floatValue]]];
-                [_gcodeInformationYDimensions setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:2] floatValue], [[[ncData boundaries] objectAtIndex:3] floatValue]]];
-                [_gcodeInformationZDimensions setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:4] floatValue], [[[ncData boundaries] objectAtIndex:5] floatValue]]];
- 
-/*
-                GCode* tmpNCData = [[GCode alloc] init];
-                [tmpNCData readFromURL:url];
-
-                [ncData setElements:[[tmpNCData elements] copy]];
-                [_ncPreview2D setGcodeElements:[tmpNCData elements]];
-                [_ncPreview3D setGcodeElements:[tmpNCData elements]];
-
-                NSString *content =[ncData toCommands];
-                [mNCData setString:content];
-                [self highlightGCode];
-                [_XRange setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:0] floatValue], [[[ncData boundaries] objectAtIndex:1] floatValue]]];
-                [_YRange setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:2] floatValue], [[[ncData boundaries] objectAtIndex:3] floatValue]]];
-                [_ZRange setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:4] floatValue], [[[ncData boundaries] objectAtIndex:5] floatValue]]];
-                [_workpathLength setStringValue:[NSString stringWithFormat:@"%.01fmm", [ncData length:MeasurmentModeAll]]];
-*/
-                
-/*
-                if ([grbl isConnected]) {
-                    int sendFromLine = 0;
-                    int sendToLine = 0;
-                    
-                    content = [content stringByReplacingOccurrencesOfString:@"\r" withString:@""];
-                    NSArray* lines = [content componentsSeparatedByString:@"\n"];
-                    if ([[lineNumberView linesWithMarkers] count] == 0) {
-                        sendToLine = [lines count] - 1;
-                    }
-                
-                    float currentWorkX = [_workCoordinateX2 floatValue];
-                    float currentWorkY = [_workCoordinateY2 floatValue];
-                    float currentWorkZ = [_workCoordinateZ2 floatValue];
-                    
-                    
-                    NSMutableArray* linesToSend = [[NSMutableArray alloc] init];
-                    linesToSend = [[lines subarrayWithRange:NSMakeRange(sendFromLine, sendToLine+1)] mutableCopy];
-                    [linesToSend insertObject:@"$C" atIndex:0];
-                    [linesToSend addObject:@"$C"];
-                    NSString *restoreWorkCoordinatesCommand = [NSString stringWithFormat:@"G92 X%f Y%f Z%f", currentWorkX, currentWorkY, currentWorkZ];
-                    [linesToSend addObject:restoreWorkCoordinatesCommand];
-                    [grbl sendCommands:linesToSend];
-                }
- */
+                [self processGCodeFile];
             }
         }
     }]; 
@@ -1497,17 +1529,6 @@
     int sendFromLine = 0;
     int sendToLine = 0;
     
-    // Apply GCode modifications
-    //GCode* ncData = [[GCode alloc] init];
-    //[ncData readFromString:[[mNCData textStorage] string]];
-    
-/*
-    ncData = [ncData shift:[[_gcodeModifiyShiftX stringValue] floatValue] :[[_gcodeModifiyShiftY stringValue] floatValue] :[[_gcodeModifiyShiftZ stringValue] floatValue]];
-    ncData = [ncData rotate:[[_gcodeModifiyAngle stringValue] floatValue]];
-    ncData = [ncData scale:[[_gcodeModifiyScale stringValue] floatValue]];
-    NSString *content =[[ncData toCommands] stringByReplacingOccurrencesOfString:@"\r" withString:@""];
- */
-
     NSString* content = [[mNCData textStorage] string];
     NSArray* lines = [content componentsSeparatedByString:@"\n"];
     if ([[lineNumberView linesWithMarkers] count] == 0) {
@@ -1622,6 +1643,39 @@
 }
 - (void)setSendingProgess:(NSNumber*)percent {
     [_sendingProgress setDoubleValue:[percent doubleValue]];
+}
+- (void)processGCodeFile {
+    GCode* ncData = [[GCode alloc] init];
+    NSString* fileName = [mNCDataFileName stringValue];
+    [ncData readFromString:[[mNCData textStorage] string]];
+    
+    [ncData readFromPath:fileName];
+    ncData = [ncData shift:[_gcodeModifiyShiftX floatValue] :[_gcodeModifiyShiftY floatValue] :[_gcodeModifiyShiftZ floatValue]];
+    ncData = [ncData rotate:[_gcodeModifiyAngle floatValue]];
+    ncData = [ncData scale:[_gcodeModifiyScale floatValue] :false];
+    
+    [mNCData setString:[ncData toCommands]];
+    [self highlightGCode];
+    
+    [_gcodeInformationXDimensions setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:0] floatValue], [[[ncData boundaries] objectAtIndex:1] floatValue]]];
+    [_gcodeInformationYDimensions setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:2] floatValue], [[[ncData boundaries] objectAtIndex:3] floatValue]]];
+    [_gcodeInformationZDimensions setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:4] floatValue], [[[ncData boundaries] objectAtIndex:5] floatValue]]];
+/*
+     GCode* tmpNCData = [[GCode alloc] init];
+     [tmpNCData readFromURL:url];
+     
+     [ncData setElements:[[tmpNCData elements] copy]];
+     [_ncPreview2D setGcodeElements:[tmpNCData elements]];
+     [_ncPreview3D setGcodeElements:[tmpNCData elements]];
+     
+     NSString *content =[ncData toCommands];
+     [mNCData setString:content];
+     [self highlightGCode];
+     [_XRange setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:0] floatValue], [[[ncData boundaries] objectAtIndex:1] floatValue]]];
+     [_YRange setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:2] floatValue], [[[ncData boundaries] objectAtIndex:3] floatValue]]];
+     [_ZRange setStringValue:[NSString stringWithFormat:@"%.02fmm to %.02fmm", [[[ncData boundaries] objectAtIndex:4] floatValue], [[[ncData boundaries] objectAtIndex:5] floatValue]]];
+     [_workpathLength setStringValue:[NSString stringWithFormat:@"%.01fmm", [ncData length:MeasurmentModeAll]]];
+*/
 }
 
 #pragma mark-
